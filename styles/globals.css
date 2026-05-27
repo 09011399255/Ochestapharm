@@ -2902,3 +2902,136 @@ img {
     padding: 1rem;
   }
 }
+
+/* ── CUSTOMER ACCOUNT PAGE STYLES ── */
+.account-page {
+  min-height: 100vh;
+  padding: 100px 5vw 60px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.account-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.auth-card {
+  max-width: 480px;
+  margin: 40px auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+}
+
+.auth-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.auth-tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.auth-tab.active {
+  color: var(--green);
+  border-bottom: 3px solid var(--green);
+  margin-bottom: -2px;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2.5rem;
+  margin-top: 2rem;
+}
+
+.profile-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  height: fit-content;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+}
+
+.history-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+}
+
+.order-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.user-order-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.user-order-card:hover {
+  border-color: rgba(0, 192, 127, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 192, 127, 0.05);
+}
+
+.user-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.user-order-id {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.user-order-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.user-order-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-pending { background: #fef3c7; color: #d97706; }
+.status-verified { background: #d1fae5; color: #059669; }
+.status-dispatched { background: #dbeafe; color: #2563eb; }
+.status-cancelled { background: #fee2e2; color: #dc2626; }
+
+@media(max-width: 768px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

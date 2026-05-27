@@ -110,6 +110,15 @@ function getProductIcon(category: string, name: string) {
   return <Pill size={24} style={{ color: 'var(--green)' }} />;
 }
 
+function getProductImageUrl(imageUrl: string | undefined | null) {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    return imageUrl;
+  }
+  const { data } = supabase.storage.from("product-images").getPublicUrl(imageUrl);
+  return data.publicUrl;
+}
+
 function generateOrderId(): string {
   return `OCP-${Math.floor(100000 + Math.random() * 900000)}`;
 }
@@ -149,6 +158,22 @@ function OrderPageContent() {
   const [paymentMethod, setPaymentMethod] = useState("transfer");
   const [placingOrder, setPlacingOrder] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState("");
+
+  // Prefill details if user is logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const meta = session.user.user_metadata || {};
+        setDetails((prev) => ({
+          ...prev,
+          email: session.user.email || prev.email,
+          firstName: meta.firstName || meta.first_name || prev.firstName,
+          lastName: meta.lastName || meta.last_name || prev.lastName,
+          phone: meta.phone || prev.phone,
+        }));
+      }
+    });
+  }, []);
 
   useEffect(() => {
     async function loadProducts() {
@@ -292,23 +317,25 @@ function OrderPageContent() {
     const orderPayload = {
       id: orderId,
       customer_name: `${details.firstName} ${details.lastName}`,
-      customer_email: details.email || `${details.firstName.toLowerCase()}@ochep-guest.com`,
       customer_phone: details.phone,
-      delivery_address: details.address,
-      delivery_city: details.city,
-      items: cartItemsArray.map((item) => ({
-        product_id: item.product.id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity,
-      })),
-      prescription_url: prescriptionUrl || null,
-      subtotal,
-      delivery_fee: DELIVERY_FEE,
-      total,
-      total_amount: total, // DB column support for total/total_amount compatibility
-      payment_method: paymentMethod,
+      total_amount: total,
       status: "pending",
+      items: {
+        cart: cartItemsArray.map((item) => ({
+          product_id: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+        })),
+        customer_email: details.email || `${details.firstName.toLowerCase()}@ochep-guest.com`,
+        delivery_address: details.address,
+        delivery_city: details.city,
+        prescription_url: prescriptionUrl || null,
+        subtotal,
+        delivery_fee: DELIVERY_FEE,
+        total,
+        payment_method: paymentMethod,
+      }
     };
 
     // Construct the WhatsApp message
@@ -419,9 +446,17 @@ function OrderPageContent() {
                   {filteredProducts.map((p) => {
                     const icon = getProductIcon(p.category, p.name);
                     const qtyInCart = cart[p.id]?.quantity || 0;
+                    const imageUrl = getProductImageUrl(p.image_url);
                     return (
                       <div key={p.id} className={`med-card ${qtyInCart > 0 ? "selected" : ""}`}>
-                        <span className="med-emoji" style={{ display: "inline-flex" }}>{icon}</span>
+                        <div className="med-image-container" style={{ position: "relative", width: "100%", height: "100px", marginBottom: "0.75rem", borderRadius: "10px", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)" }}>
+                          {imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          ) : (
+                            <span className="med-emoji" style={{ display: "inline-flex" }}>{icon}</span>
+                          )}
+                        </div>
                         <div className="med-cat">{p.category.toUpperCase()}</div>
                         <div className="med-name">{p.name}</div>
                         <div className="med-desc">{p.description}</div>

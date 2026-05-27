@@ -177,7 +177,30 @@ export default function AdminPage() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setOrders(data || []);
+      
+      const formattedOrders = (data || []).map((o: any) => {
+        if (o.items && !Array.isArray(o.items) && o.items.cart) {
+          const itemsData = o.items;
+          return {
+            ...o,
+            items: itemsData.cart,
+            customer_email: itemsData.customer_email || o.customer_email || "",
+            delivery_address: itemsData.delivery_address || o.delivery_address || "",
+            delivery_city: itemsData.delivery_city || o.delivery_city || "",
+            prescription_url: itemsData.prescription_url || o.prescription_url || "",
+            subtotal: itemsData.subtotal || o.subtotal || 0,
+            delivery_fee: itemsData.delivery_fee || o.delivery_fee || 0,
+            total: itemsData.total || o.total || o.total_amount || 0,
+            payment_method: itemsData.payment_method || o.payment_method || "transfer",
+          };
+        }
+        return {
+          ...o,
+          total: o.total || o.total_amount || 0,
+        };
+      });
+
+      setOrders(formattedOrders);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error("Error loading orders:", errMsg);

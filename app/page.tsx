@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import emailjs from "@emailjs/browser";
 import { supabase } from "@/lib/supabase";
-import { WHATSAPP_PHONE_NUMBER } from "@/lib/constants";
+import { WHATSAPP_PHONE_NUMBER, BUSINESS_EMAIL, BUSINESS_PHONE } from "@/lib/constants";
 import {
   Pill,
   HeartPulse,
@@ -116,6 +116,16 @@ function getProductIcon(category: string, name: string) {
   return <Pill size={36} style={{ color: 'var(--green)' }} />;
 }
 
+function getProductImageUrl(imageUrl: string | undefined | null) {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    return imageUrl;
+  }
+  // Otherwise, construct public URL from path
+  const { data } = supabase.storage.from("product-images").getPublicUrl(imageUrl);
+  return data.publicUrl;
+}
+
 export default function StorefrontPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCat, setSelectedCat] = useState("all");
@@ -127,9 +137,23 @@ export default function StorefrontPage() {
     show: false,
   });
   const [isSending, setIsSending] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // Form references
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Track session for navbar sign in state
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Initialize EmailJS key
   useEffect(() => {
@@ -304,6 +328,11 @@ export default function StorefrontPage() {
             <a href="#investor" onClick={() => setMenuOpen(false)}>
               Investors
             </a>
+          </li>
+          <li>
+            <Link href="/account" onClick={() => setMenuOpen(false)}>
+              {user ? "My Account" : "Sign In"}
+            </Link>
           </li>
           <li>
             <a href="#contact" className="nav-cta" onClick={() => setMenuOpen(false)}>
@@ -601,7 +630,7 @@ export default function StorefrontPage() {
               <li>Monthly billing & reporting</li>
               <li>On-site pharmacy pop-ups</li>
             </ul>
-            <a href="mailto:ochep444@gmail.com" className="svc-link">
+            <a href={`mailto:${BUSINESS_EMAIL}`} className="svc-link">
               Get a Quote →
             </a>
           </div>
@@ -659,9 +688,17 @@ export default function StorefrontPage() {
         <div className="products-grid" id="productsGrid">
           {filteredProducts.map((product) => {
             const icon = getProductIcon(product.category, product.name);
+            const imageUrl = getProductImageUrl(product.image_url);
             return (
               <div key={product.id} className="prod-card reveal" data-cat={product.category.toLowerCase()}>
-                <span className="prod-emoji" style={{ display: "inline-flex", color: "var(--green)" }}>{icon}</span>
+                <div className="prod-image-container" style={{ position: "relative", width: "100%", height: "160px", marginBottom: "1rem", borderRadius: "12px", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}>
+                  {imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span className="prod-emoji" style={{ display: "inline-flex", color: "var(--green)" }}>{icon}</span>
+                  )}
+                </div>
                 <div className="prod-cat">{product.category}</div>
                 <h4>{product.name}</h4>
                 <p>{product.description}</p>
@@ -899,7 +936,7 @@ export default function StorefrontPage() {
                 <p>O&apos;Chesta Pharma is founded and led by licensed pharmacists and healthcare technologists with deep domain expertise, regulatory relationships, and a shared mission to transform African healthcare access.</p>
               </div>
             </div>
-            <a href="mailto:ochep444@gmail.com" className="btn btn-primary" style={{ marginTop: "0.5rem", display: "inline-flex", alignItems: "center", gap: "6px" }}><Mail size={16} /> Request Pitch Deck</a>
+            <a href={`mailto:${BUSINESS_EMAIL}`} className="btn btn-primary" style={{ marginTop: "0.5rem", display: "inline-flex", alignItems: "center", gap: "6px" }}><Mail size={16} /> Request Pitch Deck</a>
           </div>
 
           <div className="inv-right reveal">
@@ -968,7 +1005,7 @@ export default function StorefrontPage() {
                 <div className="c-icon" style={{ display: "flex", color: "var(--green)" }}><Mail size={20} /></div>
                 <div className="c-info">
                   <h4>Email Us</h4>
-                  <a href="mailto:ochep444@gmail.com">ochep444@gmail.com</a>
+                  <a href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
                   <p style={{ fontSize: "0.8rem", marginTop: "3px" }}>We reply within 24 hours</p>
                 </div>
               </div>
@@ -976,11 +1013,11 @@ export default function StorefrontPage() {
                 <div className="c-icon" style={{ display: "flex", color: "var(--green)" }}><MessageSquare size={20} /></div>
                 <div className="c-info">
                   <h4>WhatsApp</h4>
-                  <a href={`https://wa.me/${WHATSAPP_PHONE_NUMBER}`} target="_blank" rel="noopener noreferrer">+234 703 451 4442</a>
+                  <a href={`https://wa.me/${WHATSAPP_PHONE_NUMBER}`} target="_blank" rel="noopener noreferrer">{BUSINESS_PHONE}</a>
                   <p style={{ fontSize: "0.8rem", marginTop: "3px" }}>Fastest response — typically under 1 hour</p>
                   <div className="social-row">
                     <a href={`https://wa.me/${WHATSAPP_PHONE_NUMBER}`} target="_blank" rel="noopener noreferrer" className="social-btn" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><MessageSquare size={14} /> Open WhatsApp</a>
-                    <a href="mailto:ochep444@gmail.com" className="social-btn" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Mail size={14} /> Send Email</a>
+                    <a href={`mailto:${BUSINESS_EMAIL}`} className="social-btn" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Mail size={14} /> Send Email</a>
                   </div>
                 </div>
               </div>
@@ -1059,8 +1096,8 @@ export default function StorefrontPage() {
             </a>
             <p>Nigeria&apos;s tech-powered pharmacy. NAFDAC-verified medicines, licensed pharmacists, delivered to your door across Nigeria.</p>
             <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <a href="mailto:ochep444@gmail.com" style={{ color: "rgba(245,243,238,0.5)", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Mail size={14} /> ochep444@gmail.com
+              <a href={`mailto:${BUSINESS_EMAIL}`} style={{ color: "rgba(245,243,238,0.5)", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Mail size={14} /> {BUSINESS_EMAIL}
               </a>
               <a
                 href={`https://wa.me/${WHATSAPP_PHONE_NUMBER}`}
@@ -1068,7 +1105,7 @@ export default function StorefrontPage() {
                 rel="noopener noreferrer"
                 style={{ color: "rgba(245,243,238,0.5)", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "6px" }}
               >
-                <MessageSquare size={14} /> +234 703 451 4442
+                <MessageSquare size={14} /> {BUSINESS_PHONE}
               </a>
               <span style={{ color: "rgba(245,243,238,0.4)", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "6px" }}><MapPin size={14} /> 35 Durban Street, Wuse II, Abuja</span>
             </div>
@@ -1108,7 +1145,7 @@ export default function StorefrontPage() {
               <li><a href="#">Terms of Service</a></li>
               <li><a href="#">NDPR Compliance</a></li>
               <li><a href="#">Returns Policy</a></li>
-              <li><a href="mailto:ochep444@gmail.com">Email Support</a></li>
+              <li><a href={`mailto:${BUSINESS_EMAIL}`}>Email Support</a></li>
             </ul>
           </div>
         </div>
