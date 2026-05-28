@@ -37,25 +37,44 @@ export default function AccountPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-      if (session) {
-        loadUserOrders(session.user.email);
+    let active = true;
+
+    async function initSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (active) {
+          setSession(session);
+          if (session) {
+            await loadUserOrders(session.user.email);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to retrieve session:", err);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-    });
+    }
+
+    initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setLoading(false);
-      if (session) {
-        loadUserOrders(session.user.email);
-      } else {
-        setOrders([]);
+      if (active) {
+        setSession(session);
+        setLoading(false);
+        if (session) {
+          loadUserOrders(session.user.email);
+        } else {
+          setOrders([]);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUserOrders = async (userEmail: string | undefined) => {
@@ -129,7 +148,7 @@ export default function AccountPage() {
         });
         if (error) throw error;
         setFormMessage({
-          text: "Registration successful! If required, please verify your email.",
+          text: "Registration successful! If you do not receive a verification email, please toggle off 'Confirm email' in your Supabase Dashboard (under Authentication > Providers > Email) to allow instant account logins.",
           type: "success",
         });
       }

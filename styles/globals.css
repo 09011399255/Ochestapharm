@@ -650,6 +650,7 @@ img {
   background: linear-gradient(135deg, var(--green-glow), transparent);
   opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none;
 }
 .storefront-page .svc-card:hover {
   transform: translateY(-5px);
@@ -716,6 +717,8 @@ img {
   color: var(--green);
   font-family: 'Syne', sans-serif;
   transition: gap 0.2s;
+  position: relative;
+  z-index: 2;
 }
 .storefront-page .svc-link:hover {
   gap: 10px;
