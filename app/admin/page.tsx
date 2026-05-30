@@ -235,24 +235,33 @@ export default function AdminPage() {
   // Check current session on mount
   useEffect(() => {
     async function verifySession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Query the admin_users table to check if the user is an admin
-        const { data: adminRecord } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("id", session.user.id)
-          .maybeSingle();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // Query the admin_users table to check if the user is an admin
+          const { data: adminRecord, error } = await supabase
+            .from("admin_users")
+            .select("id")
+            .eq("id", session.user.id)
+            .maybeSingle();
 
-        if (adminRecord) {
-          setSession(session);
+          if (error) {
+            console.error("Error checking admin_users table on mount:", error.message);
+            setSession(null);
+          } else if (adminRecord) {
+            setSession(session);
+          } else {
+            setSession(null);
+          }
         } else {
           setSession(null);
         }
-      } else {
+      } catch (err: any) {
+        console.error("verifySession caught exception:", err);
         setSession(null);
+      } finally {
+        setCheckingAuth(false);
       }
-      setCheckingAuth(false);
     }
 
     verifySession();
@@ -260,19 +269,27 @@ export default function AdminPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        const { data: adminRecord } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("id", session.user.id)
-          .maybeSingle();
+      try {
+        if (session) {
+          const { data: adminRecord, error } = await supabase
+            .from("admin_users")
+            .select("id")
+            .eq("id", session.user.id)
+            .maybeSingle();
 
-        if (adminRecord) {
-          setSession(session);
+          if (error) {
+            console.error("Error checking admin_users table on auth state change:", error.message);
+            setSession(null);
+          } else if (adminRecord) {
+            setSession(session);
+          } else {
+            setSession(null);
+          }
         } else {
           setSession(null);
         }
-      } else {
+      } catch (err: any) {
+        console.error("onAuthStateChange caught exception:", err);
         setSession(null);
       }
     });
