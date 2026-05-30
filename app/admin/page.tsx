@@ -347,8 +347,8 @@ export default function AdminPage() {
       });
       const { data, error } = (await withTimeout(
         Promise.resolve(loginPromise),
-        8000,
-        "Authentication timed out. Please check your network connection."
+        30000,
+        "Authentication timed out. The database server may be waking up. Please try again."
       )) as any;
 
       if (error) throw error;
@@ -361,8 +361,8 @@ export default function AdminPage() {
         .maybeSingle();
       const { data: adminRecord, error: dbError } = (await withTimeout(
         Promise.resolve(dbCheckPromise),
-        8000,
-        "Database verification timed out. Please try again."
+        30000,
+        "Database verification timed out. The database server may be waking up. Please try again."
       )) as any;
 
       if (dbError) throw dbError;
@@ -370,7 +370,7 @@ export default function AdminPage() {
       if (!adminRecord) {
         await withTimeout(
           Promise.resolve(supabase.auth.signOut()),
-          5000,
+          10000,
           "Sign out failed or timed out."
         );
         throw new Error("Access Denied: You do not have administrator privileges.");
@@ -401,8 +401,8 @@ export default function AdminPage() {
         .maybeSingle();
       const { data: adminRecord, error: dbError } = (await withTimeout(
         Promise.resolve(dbCheckPromise),
-        8000,
-        "Database check timed out. Please try again."
+        30000,
+        "Database check timed out. The database server may be waking up. Please try again."
       )) as any;
 
       if (dbError) throw dbError;
@@ -416,8 +416,8 @@ export default function AdminPage() {
       });
       const { error } = (await withTimeout(
         Promise.resolve(resetPromise),
-        8000,
-        "Password reset request timed out. Please try again."
+        30000,
+        "Password reset request timed out. The database server may be waking up. Please try again."
       )) as any;
 
       if (error) throw error;
