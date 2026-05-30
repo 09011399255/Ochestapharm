@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft,
@@ -15,13 +16,28 @@ import {
   MapPin,
   CheckCircle,
   Truck,
-  FileText
+  FileText,
+  Eye,
+  EyeOff,
+  KeyRound
 } from "lucide-react";
 
-export default function AccountPage() {
+function AccountPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "login" || tabParam === "signup") {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Form Fields
   const [email, setEmail] = useState("");
@@ -38,42 +54,75 @@ export default function AccountPage() {
 
   useEffect(() => {
     let active = true;
+    let subscription: any = null;
+
+    // Timeout guard: force loading state to false after 1000ms if it gets stuck
+    const loadingTimeout = setTimeout(() => {
+      if (active) {
+        console.warn("AccountPage: Session loading timed out. Forcing loading to false.");
+        setLoading(false);
+      }
+    }, 1000);
 
     async function initSession() {
       try {
+        console.log("AccountPage: Fetching session...");
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("AccountPage: Session response received:", session ? "Active session found" : "No active session");
         if (active) {
           setSession(session);
           if (session) {
-            await loadUserOrders(session.user.email);
+            loadUserOrders(session.user.email);
           }
         }
       } catch (err) {
-        console.error("Failed to retrieve session:", err);
+        console.error("AccountPage: Failed to retrieve session:", err);
       } finally {
         if (active) {
           setLoading(false);
+          clearTimeout(loadingTimeout);
         }
       }
     }
 
-    initSession();
+    try {
+      initSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) {
-        setSession(session);
-        setLoading(false);
-        if (session) {
-          loadUserOrders(session.user.email);
-        } else {
-          setOrders([]);
+      const authChangeResult = supabase.auth.onAuthStateChange((_event, session) => {
+        console.log("AccountPage: Auth state change event:", _event, session ? "Session active" : "Session null");
+        if (active) {
+          setSession(session);
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          if (session) {
+            loadUserOrders(session.user.email);
+          } else {
+            setOrders([]);
+          }
         }
+      });
+
+      if (authChangeResult && authChangeResult.data) {
+        subscription = authChangeResult.data.subscription;
       }
-    });
+    } catch (e) {
+      console.error("AccountPage: Error setting up auth state listener:", e);
+      if (active) {
+        setLoading(false);
+        clearTimeout(loadingTimeout);
+      }
+    }
 
     return () => {
       active = false;
-      subscription.unsubscribe();
+      clearTimeout(loadingTimeout);
+      if (subscription) {
+        try {
+          subscription.unsubscribe();
+        } catch (unsubErr) {
+          console.error("AccountPage: Error unsubscribing:", unsubErr);
+        }
+      }
     };
   }, []);
 
@@ -131,14 +180,19 @@ export default function AccountPage() {
         });
         if (error) throw error;
         setFormMessage({ text: "Login successful!", type: "success" });
+        router.push("/");
       } else {
         if (!firstName || !lastName || !phone) {
           throw new Error("Please fill out all fields.");
         }
+        const redirectUrl = typeof window !== 'undefined'
+          ? `${window.location.origin}/account/verify`
+          : '';
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
+            emailRedirectTo: redirectUrl,
             data: {
               firstName,
               lastName,
@@ -147,10 +201,16 @@ export default function AccountPage() {
           },
         });
         if (error) throw error;
-        setFormMessage({
-          text: "Registration successful! If you do not receive a verification email, please toggle off 'Confirm email' in your Supabase Dashboard (under Authentication > Providers > Email) to allow instant account logins.",
-          type: "success",
-        });
+
+        setSubmittedEmail(email);
+        setSignupSuccess(true);
+
+        // Clear all fields completely
+        setEmail("");
+        setPassword("");
+        setFirstName("");
+        setLastName("");
+        setPhone("");
       }
     } catch (err: any) {
       setFormMessage({ text: err.message, type: "error" });
@@ -158,6 +218,7 @@ export default function AccountPage() {
       setFormLoading(false);
     }
   };
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -182,128 +243,196 @@ export default function AccountPage() {
 
         {!session ? (
           <div className="auth-card">
-            <div className="auth-tabs">
-              <button
-                className={`auth-tab ${activeTab === "login" ? "active" : ""}`}
-                onClick={() => { setActiveTab("login"); setFormMessage(null); }}
-              >
-                Sign In
-              </button>
-              <button
-                className={`auth-tab ${activeTab === "signup" ? "active" : ""}`}
-                onClick={() => { setActiveTab("signup"); setFormMessage(null); }}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {formMessage && (
+            {signupSuccess ? (
               <div
-                className={`form-message ${formMessage.type}`}
+                className="success-card"
                 style={{
-                  padding: "0.85rem",
-                  borderRadius: "10px",
-                  fontSize: "0.9rem",
-                  marginBottom: "1.5rem",
-                  background: formMessage.type === "success" ? "rgba(0,192,127,0.1)" : "rgba(239,68,68,0.1)",
-                  color: formMessage.type === "success" ? "var(--green-dark)" : "var(--danger)",
-                  border: `1px solid ${formMessage.type === "success" ? "rgba(0,192,127,0.2)" : "rgba(239,68,68,0.2)"}`,
+                  textAlign: "center",
+                  padding: "2.5rem 1.5rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "1.25rem"
                 }}
               >
-                {formMessage.text}
+                <div
+                  style={{
+                    width: "64px",
+                    height: "64px",
+                    borderRadius: "50%",
+                    background: "rgba(0, 192, 127, 0.1)",
+                    color: "var(--green)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <CheckCircle size={36} />
+                </div>
+                <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "1.25rem", fontWeight: 800 }}>Account created!</h3>
+                <p style={{ color: "var(--muted)", fontSize: "0.92rem", lineHeight: 1.6, maxWidth: "320px" }}>
+                  We sent a verification link to <strong>{submittedEmail}</strong>. Please check your inbox.
+                </p>
               </div>
-            )}
+            ) : (
+              <>
+                <div className="auth-tabs">
+                  <button
+                    className={`auth-tab ${activeTab === "login" ? "active" : ""}`}
+                    onClick={() => { setActiveTab("login"); setFormMessage(null); }}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    className={`auth-tab ${activeTab === "signup" ? "active" : ""}`}
+                    onClick={() => { setActiveTab("signup"); setFormMessage(null); }}
+                  >
+                    Create Account
+                  </button>
+                </div>
 
-            <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              {activeTab === "signup" && (
-                <>
-                  <div style={{ display: "flex", gap: "1rem" }}>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>First Name</label>
-                      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                        <User size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
-                        <input
-                          type="text"
-                          placeholder="John"
-                          required
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Last Name</label>
-                      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                        <User size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
-                        <input
-                          type="text"
-                          placeholder="Doe"
-                          required
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
-                        />
-                      </div>
-                    </div>
+                {formMessage && (
+                  <div
+                    className={`form-message ${formMessage.type}`}
+                    style={{
+                      padding: "0.85rem",
+                      borderRadius: "10px",
+                      fontSize: "0.9rem",
+                      marginBottom: "1.5rem",
+                      background: formMessage.type === "success" ? "rgba(0,192,127,0.1)" : "rgba(239,68,68,0.1)",
+                      color: formMessage.type === "success" ? "var(--green-dark)" : "var(--danger)",
+                      border: `1px solid ${formMessage.type === "success" ? "rgba(0,192,127,0.2)" : "rgba(239,68,68,0.2)"}`,
+                    }}
+                  >
+                    {formMessage.text}
                   </div>
+                )}
+
+                <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                  {activeTab === "signup" && (
+                    <>
+                      <div style={{ display: "flex", gap: "1rem" }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>First Name</label>
+                          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                            <User size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
+                            <input
+                              type="text"
+                              placeholder="John"
+                              required
+                              value={firstName}
+                              onChange={(e) => setFirstName(e.target.value)}
+                              style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Last Name</label>
+                          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                            <User size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
+                            <input
+                              type="text"
+                              placeholder="Doe"
+                              required
+                              value={lastName}
+                              onChange={(e) => setLastName(e.target.value)}
+                              style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Phone Number</label>
+                        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                          <Phone size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
+                          <input
+                            type="tel"
+                            placeholder="+234 800 000 0000"
+                            required
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Phone Number</label>
+                    <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Email Address</label>
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                      <Phone size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
+                      <Mail size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
                       <input
-                        type="tel"
-                        placeholder="+234 800 000 0000"
+                        type="email"
+                        placeholder="john@email.com"
                         required
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
                       />
                     </div>
                   </div>
-                </>
-              )}
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Email Address</label>
-                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <Mail size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
-                  <input
-                    type="email"
-                    placeholder="john@email.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
-                  />
-                </div>
-              </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Password</label>
+                      {activeTab === "login" && (
+                        <Link
+                          href="/account/forgot-password"
+                          style={{
+                            color: "var(--green)",
+                            fontSize: "0.78rem",
+                            fontWeight: 600,
+                            textDecoration: "none"
+                          }}
+                        >
+                          Forgot Password?
+                        </Link>
+                      )}
+                    </div>
+                    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                      <Lock size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        style={{ padding: "0.75rem 2.5rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: "absolute",
+                          right: "1rem",
+                          background: "none",
+                          border: "none",
+                          color: "var(--muted)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 0
+                        }}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <label style={{ fontSize: "0.8rem", fontWeight: 600 }}>Password</label>
-                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <Lock size={16} style={{ position: "absolute", left: "1rem", color: "var(--muted)" }} />
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{ padding: "0.75rem 1rem 0.75rem 2.5rem", width: "100%", borderRadius: "10px", border: "1px solid var(--border)" }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}
-                disabled={formLoading}
-              >
-                {formLoading ? "Processing..." : activeTab === "login" ? "Sign In" : "Create Account"}
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}
+                    disabled={formLoading}
+                  >
+                    {formLoading ? "Processing..." : activeTab === "login" ? "Sign In" : "Create Account"}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         ) : (
           <div>
@@ -406,5 +535,17 @@ export default function AccountPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={
+      <div className="account-page" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+        <p>Loading account portal...</p>
+      </div>
+    }>
+      <AccountPageContent />
+    </Suspense>
   );
 }

@@ -233,6 +233,15 @@ img {
   background: var(--green) !important;
   color: var(--ink) !important;
 }
+.storefront-nav .nav-dropdown a,
+.storefront-nav .nav-dropdown button {
+  transition: background 0.15s, color 0.15s;
+}
+.storefront-nav .nav-dropdown a:hover,
+.storefront-nav .nav-dropdown button:hover {
+  background: var(--green-glow) !important;
+  color: var(--green-dark) !important;
+}
 .storefront-nav .hamburger {
   display: none;
   flex-direction: column;

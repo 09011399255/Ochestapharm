@@ -138,6 +138,7 @@ export default function StorefrontPage() {
   });
   const [isSending, setIsSending] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Form references
   const formRef = useRef<HTMLFormElement>(null);
@@ -154,6 +155,14 @@ export default function StorefrontPage() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Dropdown click outside listener
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleOutsideClick = () => setDropdownOpen(false);
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, [dropdownOpen]);
 
   // Initialize EmailJS key
   useEffect(() => {
@@ -329,11 +338,96 @@ export default function StorefrontPage() {
               Investors
             </a>
           </li>
-          <li>
-            <Link href="/account" onClick={() => setMenuOpen(false)}>
-              {user ? "My Account" : "Sign In"}
-            </Link>
-          </li>
+          {user ? (
+            <li className="nav-dropdown-wrapper" style={{ position: "relative" }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDropdownOpen(!dropdownOpen);
+                }}
+                className="nav-dropdown-trigger"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--ink)",
+                  fontFamily: "'Syne', sans-serif",
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "0"
+                }}
+              >
+                My Account <span style={{ fontSize: "0.6rem", transition: "transform 0.2s", transform: dropdownOpen ? "rotate(180deg)" : "rotate(0)" }}>▼</span>
+              </button>
+              {dropdownOpen && (
+                <div
+                  className="nav-dropdown"
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    right: 0,
+                    marginTop: "0.85rem",
+                    background: "var(--paper)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "12px",
+                    padding: "0.5rem 0",
+                    minWidth: "150px",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                    zIndex: 1000,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Link
+                    href="/account"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      setMenuOpen(false);
+                    }}
+                    style={{
+                      padding: "0.6rem 1.25rem",
+                      fontSize: "0.82rem",
+                      color: "var(--ink)",
+                      textDecoration: "none",
+                      fontWeight: 600,
+                      textAlign: "left"
+                    }}
+                  >
+                    Order History
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      setDropdownOpen(false);
+                      setMenuOpen(false);
+                      await supabase.auth.signOut();
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "0.6rem 1.25rem",
+                      fontSize: "0.82rem",
+                      color: "#ef4444",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%"
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </li>
+          ) : (
+            <li>
+              <Link href="/account" onClick={() => setMenuOpen(false)}>
+                Sign In
+              </Link>
+            </li>
+          )}
           <li>
             <a href="#contact" className="nav-cta" onClick={() => setMenuOpen(false)}>
               Contact Us
