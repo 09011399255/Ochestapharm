@@ -101,6 +101,24 @@ interface CustomerRecord {
   active: boolean;
 }
 
+// Helper wrapper to add timeouts to Supabase promises
+function withTimeout<T>(promise: Promise<T>, ms: number, timeoutErrorMsg: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(timeoutErrorMsg));
+    }, ms);
+    promise
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -323,22 +341,38 @@ export default function AdminPage() {
     setAuthError("");
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const loginPromise = supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
+      const { data, error } = (await withTimeout(
+        Promise.resolve(loginPromise),
+        8000,
+        "Authentication timed out. Please check your network connection."
+      )) as any;
 
       if (error) throw error;
 
       // Check if they exist in admin_users
-      const { data: adminRecord } = await supabase
+      const dbCheckPromise = supabase
         .from("admin_users")
         .select("id")
         .eq("id", data.user.id)
         .maybeSingle();
+      const { data: adminRecord, error: dbError } = (await withTimeout(
+        Promise.resolve(dbCheckPromise),
+        8000,
+        "Database verification timed out. Please try again."
+      )) as any;
+
+      if (dbError) throw dbError;
 
       if (!adminRecord) {
-        await supabase.auth.signOut();
+        await withTimeout(
+          Promise.resolve(supabase.auth.signOut()),
+          5000,
+          "Sign out failed or timed out."
+        );
         throw new Error("Access Denied: You do not have administrator privileges.");
       }
 
@@ -360,19 +394,31 @@ export default function AdminPage() {
 
     try {
       // Query admin_users table by email to see if they are an admin
-      const { data: adminRecord } = await supabase
+      const dbCheckPromise = supabase
         .from("admin_users")
         .select("id")
         .eq("email", email.trim().toLowerCase())
         .maybeSingle();
+      const { data: adminRecord, error: dbError } = (await withTimeout(
+        Promise.resolve(dbCheckPromise),
+        8000,
+        "Database check timed out. Please try again."
+      )) as any;
+
+      if (dbError) throw dbError;
 
       if (!adminRecord) {
         throw new Error("Access Denied: Only administrator accounts can reset passwords here.");
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const resetPromise = supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
+      const { error } = (await withTimeout(
+        Promise.resolve(resetPromise),
+        8000,
+        "Password reset request timed out. Please try again."
+      )) as any;
 
       if (error) throw error;
       setForgotSuccess("Password reset link sent to your email!");
