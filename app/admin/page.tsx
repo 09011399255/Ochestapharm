@@ -208,17 +208,34 @@ export default function AdminPage() {
     }
   }, [triggerToast]);
 
+  const checkIsAdmin = (emailAddress?: string) => {
+    if (!emailAddress) return false;
+    const allowedAdmins = [
+      "ochestapharma@gmail.com",
+      (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase()
+    ].filter(Boolean);
+    return allowedAdmins.includes(emailAddress.toLowerCase());
+  };
+
   // Check current session on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      if (session && checkIsAdmin(session.user?.email)) {
+        setSession(session);
+      } else {
+        setSession(null);
+      }
       setCheckingAuth(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      if (session && checkIsAdmin(session.user?.email)) {
+        setSession(session);
+      } else {
+        setSession(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -245,6 +262,12 @@ export default function AdminPage() {
       });
 
       if (error) throw error;
+
+      if (!checkIsAdmin(data.user?.email)) {
+        await supabase.auth.signOut();
+        throw new Error("Access Denied: You do not have administrator privileges.");
+      }
+
       setSession(data.session);
     } catch (err: any) {
       console.error("Supabase auth login error:", err);
@@ -262,6 +285,10 @@ export default function AdminPage() {
     setForgotSuccess("");
 
     try {
+      if (!checkIsAdmin(email.trim())) {
+        throw new Error("Access Denied: Only administrator accounts can reset passwords here.");
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
