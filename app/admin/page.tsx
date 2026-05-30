@@ -234,6 +234,12 @@ export default function AdminPage() {
 
   // Check current session on mount
   useEffect(() => {
+    // Failsafe: ensure loading screen is removed after 1.5 seconds under all conditions
+    const timeoutId = setTimeout(() => {
+      console.warn("Auth check timed out. Forcing checkingAuth to false.");
+      setCheckingAuth(false);
+    }, 1500);
+
     async function verifySession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -261,6 +267,7 @@ export default function AdminPage() {
         setSession(null);
       } finally {
         setCheckingAuth(false);
+        clearTimeout(timeoutId);
       }
     }
 
@@ -294,7 +301,10 @@ export default function AdminPage() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch app data when authenticated
