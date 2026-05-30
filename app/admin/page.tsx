@@ -208,31 +208,70 @@ export default function AdminPage() {
     }
   }, [triggerToast]);
 
-  const checkIsAdmin = (emailAddress?: string) => {
-    if (!emailAddress) return false;
-    const allowedAdmins = [
-      "ochestapharma@gmail.com",
-      (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase()
-    ].filter(Boolean);
-    return allowedAdmins.includes(emailAddress.toLowerCase());
-  };
+  // Admin Management State
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [addAdminLoading, setAddAdminLoading] = useState(false);
+
+  const loadAdmins = useCallback(async () => {
+    setAdminsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("*")
+        .order("added_at", { ascending: true });
+
+      if (error) throw error;
+      setAdmins(data || []);
+    } catch (err: any) {
+      console.error("Error loading admins:", err.message);
+      triggerToast("Failed to load admin list", "error");
+    } finally {
+      setAdminsLoading(false);
+    }
+  }, [triggerToast]);
 
   // Check current session on mount
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && checkIsAdmin(session.user?.email)) {
-        setSession(session);
+    async function verifySession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Query the admin_users table to check if the user is an admin
+        const { data: adminRecord } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (adminRecord) {
+          setSession(session);
+        } else {
+          setSession(null);
+        }
       } else {
         setSession(null);
       }
       setCheckingAuth(false);
-    });
+    }
+
+    verifySession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session && checkIsAdmin(session.user?.email)) {
-        setSession(session);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        const { data: adminRecord } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (adminRecord) {
+          setSession(session);
+        } else {
+          setSession(null);
+        }
       } else {
         setSession(null);
       }
@@ -247,8 +286,9 @@ export default function AdminPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadProducts();
       loadOrders();
+      loadAdmins();
     }
-  }, [session, loadProducts, loadOrders]);
+  }, [session, loadProducts, loadOrders, loadAdmins]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +303,14 @@ export default function AdminPage() {
 
       if (error) throw error;
 
-      if (!checkIsAdmin(data.user?.email)) {
+      // Check if they exist in admin_users
+      const { data: adminRecord } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (!adminRecord) {
         await supabase.auth.signOut();
         throw new Error("Access Denied: You do not have administrator privileges.");
       }
@@ -285,7 +332,14 @@ export default function AdminPage() {
     setForgotSuccess("");
 
     try {
-      if (!checkIsAdmin(email.trim())) {
+      // Query admin_users table by email to see if they are an admin
+      const { data: adminRecord } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("email", email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (!adminRecord) {
         throw new Error("Access Denied: Only administrator accounts can reset passwords here.");
       }
 
@@ -300,6 +354,78 @@ export default function AdminPage() {
       setAuthError(err?.message || "Failed to send password reset link.");
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleAddAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdminEmail.trim()) return;
+
+    setAddAdminLoading(true);
+    try {
+      const targetEmail = newAdminEmail.trim().toLowerCase();
+
+      // Check if they are already an admin
+      const isAlreadyAdmin = admins.some((a) => a.email?.toLowerCase() === targetEmail);
+      if (isAlreadyAdmin) {
+        throw new Error("This email is already an administrator.");
+      }
+
+      // Look up target email in auth.users by calling our custom security-definer RPC function
+      const { data: targetUserId, error: rpcError } = await supabase.rpc("get_user_id_by_email", {
+        email_input: targetEmail,
+      });
+
+      if (rpcError) throw rpcError;
+
+      if (!targetUserId) {
+        throw new Error("No storefront account found with this email. Please ensure the user has signed up first.");
+      }
+
+      // Insert them into admin_users
+      const { error: insertError } = await supabase
+        .from("admin_users")
+        .insert([{
+          id: targetUserId,
+          email: targetEmail,
+        }]);
+
+      if (insertError) throw insertError;
+
+      triggerToast(`Successfully added ${targetEmail} as an administrator!`);
+      setNewAdminEmail("");
+      loadAdmins();
+    } catch (err: any) {
+      console.error("Add admin error:", err);
+      triggerToast(err.message || "Failed to add administrator.", "error");
+    } finally {
+      setAddAdminLoading(false);
+    }
+  };
+
+  const handleRemoveAdmin = async (adminId: string, adminEmail: string) => {
+    if (adminId === session?.user?.id) {
+      triggerToast("You cannot remove yourself as an administrator.", "error");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to remove ${adminEmail} from administrators?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("admin_users")
+        .delete()
+        .eq("id", adminId);
+
+      if (error) throw error;
+
+      triggerToast(`Successfully removed ${adminEmail} from administrators.`);
+      loadAdmins();
+    } catch (err: any) {
+      console.error("Remove admin error:", err);
+      triggerToast(err.message || "Failed to remove administrator.", "error");
     }
   };
 
@@ -746,6 +872,14 @@ export default function AdminPage() {
         >
           <span className="nav-icon" style={{ display: "inline-flex" }}><Users size={18} /></span>
           <span>Customers</span>
+        </button>
+        <button
+          className={`nav-item ${activeTab === "admins" ? "active" : ""}`}
+          onClick={() => setActiveTab("admins")}
+          style={{ background: "none", border: "none", width: "100%", textAlign: "left" }}
+        >
+          <span className="nav-icon" style={{ display: "inline-flex" }}><ShieldCheck size={18} /></span>
+          <span>Admins</span>
         </button>
 
         <div className="nav-section">Tools</div>
@@ -1257,6 +1391,113 @@ export default function AdminPage() {
                     <tr>
                       <td colSpan={6} style={{ textAlign: "center", color: "#8a8f9e", padding: "3rem" }}>
                         No customer logs found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ADMINS TAB */}
+        {activeTab === "admins" && (
+          <div className="tab-panel active">
+            <div className="section-header">
+              <h2>Admin Management</h2>
+            </div>
+
+            {/* Add Admin Form Card */}
+            <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
+              <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "1.1rem", marginBottom: "1rem" }}>Add New Administrator</h3>
+              <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>
+                Enter the email address of the user you want to authorize as an admin. They must have already created a storefront account.
+              </p>
+              <form onSubmit={handleAddAdmin} style={{ display: "flex", gap: "10px", maxWidth: "500px" }}>
+                <input
+                  type="email"
+                  required
+                  placeholder="name@ochep.com"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "0.7rem 1rem",
+                    border: "1.5px solid var(--border)",
+                    borderRadius: "10px",
+                    outline: "none",
+                    fontSize: "0.9rem"
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={addAdminLoading}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                >
+                  {addAdminLoading ? "Adding..." : <><Plus size={16} /> Add Admin</>}
+                </button>
+              </form>
+            </div>
+
+            {/* Admins List Table Card */}
+            <div className="card">
+              <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "1.1rem", padding: "1.25rem 1.5rem 0.5rem 1.5rem" }}>Authorized Administrators</h3>
+              <table className="cust-table">
+                <thead>
+                  <tr>
+                    <th>Email Address</th>
+                    <th>Date Added</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminsLoading ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", color: "#8a8f9e", padding: "2rem" }}>
+                        Loading administrators list...
+                      </td>
+                    </tr>
+                  ) : admins.map((admin) => {
+                    const isSelf = admin.id === session?.user?.id;
+                    const initials = (admin.email || "A")
+                      .split("@")[0]
+                      .slice(0, 2)
+                      .toUpperCase();
+                    return (
+                      <tr key={admin.id}>
+                        <td>
+                          <span className="cust-avatar" style={{ background: isSelf ? "var(--green)" : "var(--border)", color: isSelf ? "#fff" : "var(--ink)" }}>{initials}</span>
+                          <strong>{admin.email}</strong> {isSelf && <span style={{ fontSize: "0.75rem", background: "rgba(0, 192, 127, 0.15)", color: "var(--green-dark)", padding: "2px 8px", borderRadius: "10px", marginLeft: "8px", fontWeight: "bold" }}>You</span>}
+                        </td>
+                        <td style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+                          {admin.added_at ? new Date(admin.added_at).toLocaleString() : "First Admin"}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <button
+                            className="action-btn"
+                            disabled={isSelf}
+                            onClick={() => handleRemoveAdmin(admin.id, admin.email)}
+                            style={{
+                              color: isSelf ? "var(--muted)" : "#ef4444",
+                              borderColor: isSelf ? "var(--border)" : "rgba(239,68,68,0.2)",
+                              cursor: isSelf ? "not-allowed" : "pointer",
+                              opacity: isSelf ? 0.5 : 1,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            <Trash2 size={12} /> Remove
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!adminsLoading && admins.length === 0 && (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", color: "#8a8f9e", padding: "3rem" }}>
+                        No administrators registered in public.admin_users.
                       </td>
                     </tr>
                   )}
