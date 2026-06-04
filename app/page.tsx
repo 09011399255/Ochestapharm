@@ -139,6 +139,11 @@ export default function StorefrontPage() {
   const [isSending, setIsSending] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [licenseModal, setLicenseModal] = useState<{ isOpen: boolean; title: string; imageSrc: string }>({
+    isOpen: false,
+    title: "",
+    imageSrc: "",
+  });
 
   // Form references
   const formRef = useRef<HTMLFormElement>(null);
@@ -163,6 +168,18 @@ export default function StorefrontPage() {
     window.addEventListener("click", handleOutsideClick);
     return () => window.removeEventListener("click", handleOutsideClick);
   }, [dropdownOpen]);
+
+  // Escape key listener to close license lightbox modal
+  useEffect(() => {
+    if (!licenseModal.isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLicenseModal(prev => ({ ...prev, isOpen: false }));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [licenseModal.isOpen]);
 
   // Initialize EmailJS key
   useEffect(() => {
@@ -571,17 +588,41 @@ export default function StorefrontPage() {
                 <div className="ab-metric-num">NAFDAC</div>
                 <div className="ab-metric-label">Registered</div>
               </div>
-              <div className="ab-metric">
+              <div
+                className="ab-metric clickable"
+                onClick={() =>
+                  setLicenseModal({
+                    isOpen: true,
+                    title: "PCN Pharmacy License Certificate",
+                    imageSrc: "/Assets/License.png",
+                  })
+                }
+              >
                 <div className="ab-metric-num">PCN</div>
-                <div className="ab-metric-label">Licensed</div>
+                <div className="ab-metric-label">
+                  Licensed
+                  <span className="view-badge">View License 🔍</span>
+                </div>
               </div>
               <div className="ab-metric">
                 <div className="ab-metric-num">A+</div>
                 <div className="ab-metric-label">Quality Rating</div>
               </div>
-              <div className="ab-metric">
-                <div className="ab-metric-num">2024</div>
-                <div className="ab-metric-label">Founded</div>
+              <div
+                className="ab-metric clickable"
+                onClick={() =>
+                  setLicenseModal({
+                    isOpen: true,
+                    title: "CAC Incorporation Certificate",
+                    imageSrc: "/Assets/CAC.png",
+                  })
+                }
+              >
+                <div className="ab-metric-num">CAC</div>
+                <div className="ab-metric-label">
+                  Registered 2024
+                  <span className="view-badge">View Certificate 🔍</span>
+                </div>
               </div>
             </div>
             <div className="team-strip">
@@ -1253,6 +1294,38 @@ export default function StorefrontPage() {
           </div>
         </div>
       </footer>
+
+      {/* LICENSE LIGHTBOX MODAL */}
+      {licenseModal.isOpen && (
+        <div
+          className="license-modal-overlay"
+          onClick={() => setLicenseModal(prev => ({ ...prev, isOpen: false }))}
+        >
+          <div
+            className="license-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="license-modal-header">
+              <h3>{licenseModal.title}</h3>
+              <button
+                className="license-modal-close"
+                onClick={() => setLicenseModal(prev => ({ ...prev, isOpen: false }))}
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="license-modal-body">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={licenseModal.imageSrc}
+                alt={licenseModal.title}
+                className="license-modal-img"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

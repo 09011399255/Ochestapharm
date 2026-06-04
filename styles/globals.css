@@ -564,16 +564,53 @@ img {
   padding: 1.25rem;
   text-align: center;
 }
+.storefront-page .ab-metric.clickable {
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
+}
+.storefront-page .ab-metric.clickable:hover {
+  transform: translateY(-2px);
+  background: rgba(0, 192, 127, 0.08);
+  border-color: rgba(0, 192, 127, 0.35);
+}
 .storefront-page .ab-metric-num {
   font-family: 'Syne', sans-serif;
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--green);
+  transition: color 0.2s;
+}
+.storefront-page .ab-metric.clickable:hover .ab-metric-num {
+  color: #fff;
 }
 .storefront-page .ab-metric-label {
   font-size: 0.72rem;
   color: rgba(245, 243, 238, 0.45);
   margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.storefront-page .ab-metric.clickable .view-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  color: var(--green);
+  margin-top: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: rgba(0, 192, 127, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.8;
+  transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+}
+.storefront-page .ab-metric.clickable:hover .view-badge {
+  opacity: 1;
+  background: var(--green);
+  color: var(--ink);
 }
 .storefront-page .team-strip {
   margin-top: 2rem;
@@ -3044,6 +3081,113 @@ img {
 @media(max-width: 768px) {
   .account-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── LICENSE LIGHTBOX MODAL ── */
+.license-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 18, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: modalFadeIn 0.25s ease forwards;
+}
+
+.license-modal-content {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  animation: modalZoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.license-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+}
+
+.license-modal-header h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+}
+
+.license-modal-close {
+  background: rgba(0,0,0,0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--ink);
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.license-modal-close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  transform: rotate(90deg);
+}
+
+.license-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fdfdfd;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.license-modal-img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #eee;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalZoomIn {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (max-width: 576px) {
+  .license-modal-overlay {
+    padding: 1rem;
+  }
+  .license-modal-content {
+    border-radius: 20px;
+  }
+  .license-modal-body {
+    padding: 1rem;
   }
 }
 
