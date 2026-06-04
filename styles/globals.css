@@ -327,6 +327,14 @@ img {
   max-width: 940px;
   text-align: center;
 }
+.storefront-page .hero-badge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2.25rem;
+  animation: fadeUp 0.7s ease both;
+}
 .storefront-page .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -339,10 +347,17 @@ img {
   font-weight: 700;
   padding: 0.4rem 1.1rem;
   border-radius: 100px;
-  margin-bottom: 2rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  animation: fadeUp 0.7s ease both;
+}
+.storefront-page .hero-badge-sub {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  opacity: 0.85;
 }
 .storefront-page .hero-badge::before {
   content: '';

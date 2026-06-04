@@ -468,7 +468,10 @@ export default function StorefrontPage() {
         <div className="hero-bg"></div>
         <div className="hero-grid"></div>
         <div className="hero-inner">
-          <span className="hero-badge">Nigeria&apos;s Next-Generation Pharmacy</span>
+          <div className="hero-badge-container">
+            <span className="hero-badge">Nigeria&apos;s Next-Generation Pharmacy</span>
+            <span className="hero-badge-sub">Superintendent Pharmacist: Pharm. Oche Peter Obiabo</span>
+          </div>
           <h1>
             Healthcare,
             <br />
@@ -629,10 +632,10 @@ export default function StorefrontPage() {
               <h5>Our Pharmacy Team</h5>
               <div className="team-members">
                 <div className="team-member">
-                  <div className="member-avatar">CP</div>
+                  <div className="member-avatar">SP</div>
                   <div className="member-info">
-                    <p>Chief Pharmacist</p>
-                    <span>B.Pharm, MPH — 12 years experience</span>
+                    <p>Superintendent Pharmacist</p>
+                    <span>Pharm. Oche Peter Obiabo (B.Pharm, MPH)</span>
                   </div>
                 </div>
                 <div className="team-member">
@@ -1285,7 +1288,11 @@ export default function StorefrontPage() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p suppressHydrationWarning>© {new Date().getFullYear()} O&apos;Chesta Pharma Ltd. All rights reserved. Registered with NAFDAC & PCN Nigeria.</p>
+          <p suppressHydrationWarning>
+            © {new Date().getFullYear()} O&apos;Chesta Pharma Ltd. All rights reserved. Registered with NAFDAC & PCN Nigeria.
+            <br />
+            Superintendent Pharmacist: Pharm. Oche Peter Obiabo
+          </p>
           <div className="badges">
             <span className="badge">NAFDAC</span>
             <span className="badge">PCN Licensed</span>
