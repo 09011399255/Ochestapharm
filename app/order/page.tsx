@@ -348,14 +348,20 @@ function OrderPageContent() {
       const { error } = await supabase.from("orders").insert([orderPayload]);
       if (error) throw error;
 
-      // 2. Try to update stock level for each product (optional best-effort)
-      for (const item of cartItemsArray) {
-        if (item.product.stock_qty && !item.product.id.startsWith("1")) { // Don't deduct from fallback IDs
-          const newQty = Math.max(0, item.product.stock_qty - item.quantity);
-          await supabase
-            .from("products")
-            .update({ stock_qty: newQty })
-            .eq("id", item.product.id);
+      // 2. Decrement stock level in database atomically
+      const orderItemsJson = cartItemsArray
+        .filter((item) => !item.product.id.startsWith("1"))
+        .map((item) => ({
+          product_id: item.product.id,
+          qty: item.quantity,
+        }));
+
+      if (orderItemsJson.length > 0) {
+        const { error: rpcError } = await supabase.rpc("decrement_stock", {
+          items: orderItemsJson,
+        });
+        if (rpcError) {
+          console.error("Error calling decrement_stock RPC:", rpcError);
         }
       }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "../styles/globals.css";
 
 const geistSans = Geist({
@@ -24,7 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Script 
+          src="https://latencyzero-clinic-api.onrender.com/widget/zp_83f3de064cfeca4abe51a08f.js"
+          strategy="lazyOnload"
+        />
+      </body>
     </html>
   );
 }
