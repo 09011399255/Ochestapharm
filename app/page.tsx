@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import emailjs from "@emailjs/browser";
 import { supabase } from "@/lib/supabase";
+import { startZaraOrder } from "@/lib/zara";
 import { WHATSAPP_PHONE_NUMBER, BUSINESS_EMAIL, BUSINESS_PHONE } from "@/lib/constants";
 import {
   Pill,
@@ -307,16 +308,7 @@ export default function StorefrontPage() {
 
   return (
     <div className="storefront-page">
-      {/* WHATSAPP FLOAT */}
-      <a
-        href={`https://wa.me/${WHATSAPP_PHONE_NUMBER}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="wa-float"
-        title="Chat on WhatsApp"
-      >
-        💬
-      </a>
+
 
       {/* TOAST */}
       <div className={`toast ${toast.type} ${toast.show ? "show" : ""}`}>
@@ -485,9 +477,9 @@ export default function StorefrontPage() {
             Nigeria.
           </p>
           <div className="hero-actions">
-            <Link href="/order" className="btn btn-primary">
-              Order Medicines →
-            </Link>
+            <button onClick={() => startZaraOrder()} className="btn btn-primary">
+              Submit via Zara
+            </button>
             <a href="#about" className="btn btn-outline">
               Our Story
             </a>
@@ -848,9 +840,13 @@ export default function StorefrontPage() {
                     <span className="prod-otc">OTC</span>
                   )}
                 </div>
-                <Link href={`/order?product=${product.id}`} className="prod-order" style={{ textAlign: "center" }}>
-                  Order Now →
-                </Link>
+                <button
+                  onClick={() => startZaraOrder({ id: product.id, name: product.name })}
+                  className="prod-order"
+                  style={{ textAlign: "center", border: "none" }}
+                >
+                  Submit via Zara
+                </button>
               </div>
             );
           })}

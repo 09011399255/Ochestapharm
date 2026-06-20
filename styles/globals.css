@@ -131,28 +131,10 @@ img {
   color: #fff;
 }
 
-/* ── WHATSAPP FLOAT ── */
-.wa-float {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 150;
-  width: 54px;
-  height: 54px;
-  background: #25D366;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  text-decoration: none;
-}
-.wa-float:hover {
-  transform: scale(1.1);
-  box-shadow: 0 8px 28px rgba(37, 211, 102, 0.55);
+/* ── ZARA CHAT FLOAT ── */
+#_zw {
+  bottom: 2rem !important;
+  right: 2rem !important;
 }
 
 

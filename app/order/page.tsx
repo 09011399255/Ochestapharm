@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { startZaraOrder } from "@/lib/zara";
 import { WHATSAPP_PHONE_NUMBER, DELIVERY_FEE } from "@/lib/constants";
 import {
   AlertTriangle,
@@ -731,11 +732,10 @@ function OrderPageContent() {
                 <button className="btn btn-ghost" onClick={() => goTo(3)} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={16} /> Back</button>
                 <button
                   className="btn btn-primary"
-                  onClick={placeOrder}
+                  onClick={() => startZaraOrder()}
                   style={{ padding: "1rem 2.5rem", display: "inline-flex", alignItems: "center", gap: "8px" }}
-                  disabled={placingOrder}
                 >
-                  {placingOrder ? "Placing Order..." : <><CheckCircle size={18} /> Place Order</>}
+                  <CheckCircle size={18} /> Submit via Zara
                 </button>
               </div>
             </div>
