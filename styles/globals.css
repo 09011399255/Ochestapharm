@@ -133,8 +133,11 @@ img {
 
 /* ── ZARA CHAT FLOAT ── */
 #_zw {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
   bottom: 2rem !important;
-  right: 2rem !important;
+  right: calc(5vw + 30px) !important;
 }
 
 
@@ -1549,6 +1552,15 @@ img {
   .storefront-nav .hamburger {
     display: flex;
   }
+  .storefront-nav .hamburger.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .storefront-nav .hamburger.open span:nth-child(2) {
+    opacity: 0;
+  }
+  .storefront-nav .hamburger.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
   .storefront-page .about-layout,
   .storefront-page .services-intro,
   .storefront-page .eph-layout,
@@ -1594,6 +1606,35 @@ img {
   }
   .storefront-page h1 {
     font-size: 2.8rem;
+  }
+  .storefront-page .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    max-width: 320px;
+    margin: 0 auto 2rem;
+  }
+  .storefront-page .hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .storefront-page .hero-stats {
+    flex-wrap: wrap;
+    margin-top: 3.5rem;
+  }
+  .storefront-page .h-stat {
+    flex: 1 1 50%;
+    border-bottom: 1px solid var(--border);
+  }
+  .storefront-page .h-stat:nth-child(2) {
+    border-right: none;
+  }
+  .storefront-page .h-stat:nth-child(3) {
+    border-bottom: none;
+  }
+  .storefront-page .h-stat:nth-child(4) {
+    border-right: none;
+    border-bottom: none;
   }
   .storefront-page .h-stat {
     padding: 1rem 0.5rem;

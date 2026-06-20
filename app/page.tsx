@@ -170,6 +170,19 @@ export default function StorefrontPage() {
     return () => window.removeEventListener("click", handleOutsideClick);
   }, [dropdownOpen]);
 
+  // Mobile menu click outside listener
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#navLinks") && !target.closest("#hamburger")) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, [menuOpen]);
+
   // Escape key listener to close license lightbox modal
   useEffect(() => {
     if (!licenseModal.isOpen) return;
@@ -444,7 +457,7 @@ export default function StorefrontPage() {
           </li>
         </ul>
         <button
-          className="hamburger"
+          className={`hamburger ${menuOpen ? "open" : ""}`}
           id="hamburger"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Menu"

@@ -1583,10 +1583,10 @@ export default function AdminPage() {
 
       {/* PRODUCT ADD/EDIT MODAL */}
       {productModalOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "grid", placeItems: "center", background: "rgba(10,15,30,0.6)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: "#fff", padding: "2rem", borderRadius: "20px", width: "100%", maxWidth: "480px", border: "1px solid var(--border)", boxShadow: "0 10px 40px rgba(0,0,0,0.15)" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "grid", placeItems: "center", background: "rgba(10,15,30,0.6)", backdropFilter: "blur(4px)", padding: "1rem" }}>
+          <div style={{ background: "#fff", padding: "2rem", borderRadius: "20px", width: "100%", maxWidth: "480px", maxHeight: "90vh", display: "flex", flexDirection: "column", border: "1px solid var(--border)", boxShadow: "0 10px 40px rgba(0,0,0,0.15)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-              <h3 style={{ fontFamily: "Syne, sans-serif" }}>
+              <h3 style={{ fontFamily: "Syne, sans-serif", margin: 0 }}>
                 {editingProduct ? "Edit Product" : "Add Product"}
               </h3>
               <button
@@ -1597,101 +1597,103 @@ export default function AdminPage() {
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSaveProduct} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div className="form-group">
-                <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Product Name</label>
-                <input
-                  type="text"
-                  required
-                  value={productForm.name}
-                  onChange={(e) => setProductForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Amoxicillin 500mg"
-                  style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px" }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Category</label>
-                <select
-                  value={productForm.category}
-                  onChange={(e) => setProductForm((p) => ({ ...p, category: e.target.value }))}
-                  style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px" }}
-                >
-                  <option value="Prescription">Prescription</option>
-                  <option value="OTC">OTC</option>
-                  <option value="Supplements">Supplements</option>
-                  <option value="Diagnostics">Diagnostics</option>
-                  <option value="Paediatrics">Paediatrics</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Description</label>
-                <textarea
-                  value={productForm.description}
-                  onChange={(e) => setProductForm((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="Antibiotic for bacterial infections..."
-                  style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px", minHeight: "60px", resize: "vertical" }}
-                />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div className="form-group">
-                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Price (₦)</label>
+            <form onSubmit={handleSaveProduct} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "1rem", paddingRight: "4px", marginBottom: "1.25rem" }}>
+                <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Product Name</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    value={productForm.price}
-                    onChange={(e) => setProductForm((p) => ({ ...p, price: e.target.value }))}
-                    placeholder="1500"
-                    style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px" }}
+                    value={productForm.name}
+                    onChange={(e) => setProductForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Amoxicillin 500mg"
+                    style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px", outline: "none" }}
                   />
                 </div>
-                <div className="form-group">
-                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Stock Qty</label>
-                  <input
-                    type="number"
-                    required
-                    value={productForm.stock_qty}
-                    onChange={(e) => setProductForm((p) => ({ ...p, stock_qty: e.target.value }))}
-                    placeholder="100"
-                    style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px" }}
+
+                <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Category</label>
+                  <select
+                    value={productForm.category}
+                    onChange={(e) => setProductForm((p) => ({ ...p, category: e.target.value }))}
+                    style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px", outline: "none", background: "#fff" }}
+                  >
+                    <option value="Prescription">Prescription</option>
+                    <option value="OTC">OTC</option>
+                    <option value="Supplements">Supplements</option>
+                    <option value="Diagnostics">Diagnostics</option>
+                    <option value="Paediatrics">Paediatrics</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Description</label>
+                  <textarea
+                    value={productForm.description}
+                    onChange={(e) => setProductForm((p) => ({ ...p, description: e.target.value }))}
+                    placeholder="Antibiotic for bacterial infections..."
+                    style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px", minHeight: "60px", resize: "vertical", outline: "none" }}
                   />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Price (₦)</label>
+                    <input
+                      type="number"
+                      required
+                      value={productForm.price}
+                      onChange={(e) => setProductForm((p) => ({ ...p, price: e.target.value }))}
+                      placeholder="1500"
+                      style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px", outline: "none" }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Stock Qty</label>
+                    <input
+                      type="number"
+                      required
+                      value={productForm.stock_qty}
+                      onChange={(e) => setProductForm((p) => ({ ...p, stock_qty: e.target.value }))}
+                      placeholder="100"
+                      style={{ padding: "0.7rem", border: "1.5px solid var(--border)", borderRadius: "10px", outline: "none" }}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Product Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ fontSize: "0.8rem", marginTop: "4px" }}
+                  />
+                  {uploadingImage && <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Uploading...</span>}
+                  {productForm.image_url && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={productForm.image_url}
+                      alt="Preview"
+                      style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", marginTop: "8px" }}
+                    />
+                  )}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <input
+                    type="checkbox"
+                    id="reqRx"
+                    checked={productForm.requires_prescription}
+                    onChange={(e) => setProductForm((p) => ({ ...p, requires_prescription: e.target.checked }))}
+                  />
+                  <label htmlFor="reqRx" style={{ fontSize: "0.85rem", fontWeight: 600, cursor: "pointer" }}>
+                    Requires Prescription (Rx Required)
+                  </label>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Product Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ fontSize: "0.8rem", marginTop: "4px" }}
-                />
-                {uploadingImage && <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Uploading...</span>}
-                {productForm.image_url && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={productForm.image_url}
-                    alt="Preview"
-                    style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", marginTop: "8px" }}
-                  />
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input
-                  type="checkbox"
-                  id="reqRx"
-                  checked={productForm.requires_prescription}
-                  onChange={(e) => setProductForm((p) => ({ ...p, requires_prescription: e.target.checked }))}
-                />
-                <label htmlFor="reqRx" style={{ fontSize: "0.85rem", fontWeight: 600, cursor: "pointer" }}>
-                  Requires Prescription (Rx Required)
-                </label>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
                 <button type="button" className="btn btn-outline" onClick={() => setProductModalOpen(false)}>
                   Cancel
                 </button>
