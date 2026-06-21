@@ -138,6 +138,10 @@ img {
   align-items: flex-end !important;
   bottom: 2rem !important;
   right: calc(5vw + 30px) !important;
+  pointer-events: none !important;
+}
+#_zw > *:not(.hide) {
+  pointer-events: auto !important;
 }
 
 

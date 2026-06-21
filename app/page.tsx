@@ -132,6 +132,16 @@ export default function StorefrontPage() {
   const [selectedCat, setSelectedCat] = useState("all");
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+    const element = document.querySelector(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setTimeout(() => {
+      setMenuOpen(false);
+    }, 150);
+  };
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error"; show: boolean }>({
     msg: "",
     type: "success",
@@ -336,27 +346,27 @@ export default function StorefrontPage() {
         </a>
         <ul className={`nav-links ${menuOpen ? "open" : ""}`} id="navLinks">
           <li>
-            <a href="#about" onClick={() => setMenuOpen(false)}>
+            <a href="#about" onClick={(e) => handleNavClick(e, "#about")}>
               About
             </a>
           </li>
           <li>
-            <a href="#services" onClick={() => setMenuOpen(false)}>
+            <a href="#services" onClick={(e) => handleNavClick(e, "#services")}>
               Services
             </a>
           </li>
           <li>
-            <a href="#products" onClick={() => setMenuOpen(false)}>
+            <a href="#products" onClick={(e) => handleNavClick(e, "#products")}>
               Products
             </a>
           </li>
           <li>
-            <a href="#epharmacy" onClick={() => setMenuOpen(false)}>
+            <a href="#epharmacy" onClick={(e) => handleNavClick(e, "#epharmacy")}>
               E-Pharmacy
             </a>
           </li>
           <li>
-            <a href="#investor" onClick={() => setMenuOpen(false)}>
+            <a href="#investor" onClick={(e) => handleNavClick(e, "#investor")}>
               Investors
             </a>
           </li>
@@ -451,7 +461,7 @@ export default function StorefrontPage() {
             </li>
           )}
           <li>
-            <a href="#contact" className="nav-cta" onClick={() => setMenuOpen(false)}>
+            <a href="#contact" className="nav-cta" onClick={(e) => handleNavClick(e, "#contact")}>
               Contact Us
             </a>
           </li>

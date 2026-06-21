@@ -128,6 +128,7 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState("");
+  const [showConnectingMsg, setShowConnectingMsg] = useState(false);
 
   // App State
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -252,6 +253,12 @@ export default function AdminPage() {
 
   // Check current session on mount
   useEffect(() => {
+    // Trivial read query to wake up the Supabase database container
+    supabase.from("admin_users").select("id").limit(1).then(({ error }) => {
+      if (error) console.log("Database ping returned error (likely sleeping):", error.message);
+      else console.log("Database ping successful.");
+    });
+
     // Failsafe: ensure loading screen is removed after 1.5 seconds under all conditions
     const timeoutId = setTimeout(() => {
       console.warn("Auth check timed out. Forcing checkingAuth to false.");
@@ -339,6 +346,11 @@ export default function AdminPage() {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError("");
+    setShowConnectingMsg(false);
+
+    const connectingTimer = setTimeout(() => {
+      setShowConnectingMsg(true);
+    }, 5000);
 
     try {
       const loginPromise = supabase.auth.signInWithPassword({
@@ -382,7 +394,9 @@ export default function AdminPage() {
       const errMsg = err?.message || (typeof err === "string" ? err : "Invalid login credentials");
       setAuthError(errMsg);
     } finally {
+      clearTimeout(connectingTimer);
       setAuthLoading(false);
+      setShowConnectingMsg(false);
     }
   };
 
@@ -882,6 +896,13 @@ export default function AdminPage() {
                 <div style={{ color: "#ef4444", fontSize: "0.85rem", background: "rgba(239, 68, 68, 0.1)", padding: "0.6rem", borderRadius: "6px", display: "flex", gap: "6px", alignItems: "center" }}>
                   <AlertTriangle size={16} />
                   <span>{authError}</span>
+                </div>
+              )}
+
+              {showConnectingMsg && (
+                <div style={{ color: "#d97706", fontSize: "0.82rem", background: "rgba(217, 119, 6, 0.1)", padding: "0.6rem", borderRadius: "6px", display: "flex", gap: "6px", alignItems: "center", border: "1px solid rgba(217, 119, 6, 0.2)" }}>
+                  <AlertTriangle size={16} />
+                  <span>Still connecting — first login can take up to 30 seconds.</span>
                 </div>
               )}
 
